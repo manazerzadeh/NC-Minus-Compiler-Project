@@ -9,6 +9,8 @@ keys = ['EOF', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
     , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'default', ':', '<'
     , '==', '+', '-', '*', '=']
 
+seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '*', ' ']
+
 
 class Parser:
     def __init__(self, file_name):

@@ -22,3 +22,10 @@ class SymbolTable:
             if entry.symbolName == symbol_name:
                 return entry
         return None
+
+    def is_in_table(self, symbol_name: str):
+        entry = self.find_symbol(symbol_name)
+        if entry is None:
+            return False
+        else:
+            return True
