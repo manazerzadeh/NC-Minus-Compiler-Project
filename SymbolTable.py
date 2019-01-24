@@ -11,13 +11,14 @@ class SymbolTableEntry:
 
 class SymbolTable:
     def __init__(self):
-        self.entries = List[SymbolTableEntry]
+        self.entries: List[SymbolTableEntry] = []
 
-    def add_symbol(self, symbol_name, symbol_type):
-        symbol = SymbolTable(symbol_name, symbol_type)
+    def add_symbol(self, symbol_name: str, symbol_type: str):  # will be used in scanner
+        symbol = SymbolTableEntry(symbol_name, symbol_type)
         self.entries.append(symbol)
 
-    def find_symbol(self, name):
+    def find_symbol(self, symbol_name: str):  # will be used in semantic analysis
         for entry in self.entries:
-            if(entry.symbolName = name)
-
+            if entry.symbolName == symbol_name:
+                return entry
+        return None
