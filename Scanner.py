@@ -1,5 +1,3 @@
-from typing import *
-
 import SymbolTable
 from Parser import keys
 from Parser import seperators
@@ -40,11 +38,37 @@ class Scanner:
             if char == -1:
                 return
             else:
-                if char in seperators:
-                    self.char_index -= 1
-                    if token in keys:
-
-                        return token, token
+                if len(token) >= 1:
+                    if char in seperators:
+                        self.char_index -= 1
+                        if token in keys:
+                            if not self.symbol_table.is_in_table(token):
+                                self.symbol_table.add_symbol(token, token)
+                            return token, token
+                        else:
+                            symbol_type = check_num_id(token)
+                            if not self.symbol_table.is_in_table(token):
+                                self.symbol_table.add_symbol(token, symbol_type)
+                            return token, symbol_type
                     else:
-                        symbol_type = check_num_id(token)
-                        return token, symbol_type
+                        token += char
+                else:
+                    if char in seperators:
+                        if char == ' ':
+                            continue
+                        if char == '=':
+                            token += char
+                            if self.get_char() == '=':
+                                token += char
+                                if not self.symbol_table.is_in_table(token):
+                                    self.symbol_table.add_symbol(token, token)
+                            else:
+                                self.char_index -= 1
+                                if not self.symbol_table.is_in_table(token):
+                                    self.symbol_table.add_symbol(token, token)
+                        else:
+                            token += char
+                            if not self.symbol_table.is_in_table(token):
+                                self.symbol_table.add_symbol(token, token)
+                    else:
+                        token += char
