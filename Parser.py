@@ -24,7 +24,7 @@ class Parser:
         def handle_program():
             handle_declaration_list()
             if not match('EOF'):
-                raise Exception("expected EOF, instead got ", token[1])
+                raise Exception("expected EOF, instead got " + token[1])
             return
 
         def handle_declaration_list():
@@ -40,12 +40,12 @@ class Parser:
                 handle_declaration()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_declaration():
             handle_type_specifier()
             if not match('ID'):
-                raise Exception("Expected ID, instead got ", token[1])
+                raise Exception("Expected ID, instead got " + token[1])
             handle_declaration_prime()
             return
 
@@ -55,14 +55,14 @@ class Parser:
                 return
             elif token[1] in ['(']:
                 if not match('('):
-                    raise Exception("Expected (, instead got ", token[1])
+                    raise Exception("Expected (, instead got " + token[1])
                 handle_params()
                 if not match(')'):
-                    raise Exception("Expected ), instead got ", token[1])
+                    raise Exception("Expected ), instead got " + token[1])
                 handle_compound_stmt()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_var_declaration_prime():
             if token[1] in [';']:
@@ -71,14 +71,14 @@ class Parser:
             elif token[1] in ['[']:
                 match('[')
                 if not match('NUM'):
-                    raise Exception("Expected NUM instead got ", token[1])
+                    raise Exception("Expected NUM instead got " + token[1])
                 if not match(']'):
-                    raise Exception("Expected ] instead got ", token[1])
+                    raise Exception("Expected ] instead got " + token[1])
                 if not match(';'):
-                    raise Exception("Expected ;, instead got ", token[1])
+                    raise Exception("Expected ;, instead got " + token[1])
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_type_specifier():
             if token[1] in ['int']:
@@ -88,7 +88,7 @@ class Parser:
                 match('void')
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_params_prime():
             if token[1] == 'ID':
@@ -99,7 +99,7 @@ class Parser:
             if token[1] == ')':
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_params():
             if token[1] == 'void':
@@ -109,12 +109,12 @@ class Parser:
             if token[1] == 'int':
                 match('int')
                 if not match('ID'):
-                    raise Exception("Expected ID, instead got ", token[1])
+                    raise Exception("Expected ID, instead got " + token[1])
                 handle_param_prime()
                 handle_param_list_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_param_list():
             handle_param()
@@ -128,7 +128,7 @@ class Parser:
                 handle_param()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_param():
             handle_type_specifier()
@@ -139,7 +139,7 @@ class Parser:
             if token[1] == '[':
                 match('[')
                 if not match(']'):
-                    raise Exception("Expected ] instead got ", token[1])
+                    raise Exception("Expected ] instead got " + token[1])
                 return
             if token[1] in [',', ')']:
                 return
@@ -148,7 +148,11 @@ class Parser:
 
         def handle_compound_stmt():
             if not match('{'):
-                raise Exception("Expected {, instead got ", token[1])
+                raise Exception("Expected {, instead got " + token[1])
+            handle_declaration_list()
+            handle_statement_list()
+            if not match('}'):
+                raise Exception("Expected }, instead got " + token[1])
 
         def handle_statement_list():
             if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM', 'if', 'return', '{',
@@ -158,7 +162,7 @@ class Parser:
             if token[1] in ['}', 'default']:
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_statement():
             if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM']:
@@ -180,58 +184,58 @@ class Parser:
                 handle_switch_stmt()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_expression_stmt():
             if token[1] in ['ID', '(', 'NUM']:
                 handle_expression()
                 if not match(';'):
-                    raise Exception('Expected ;, instead got ', token[1])
+                    raise Exception('Expected ;, instead got ' + token[1])
                 return
             if token[1] == 'continue':
                 match('continue')
                 if not match(';'):
-                    raise Exception('Expected ;, instead got ', token[1])
+                    raise Exception('Expected ;, instead got ' + token[1])
                 return
             if token[1] == 'break':
                 match('break')
                 if not match(';'):
-                    raise Exception('Expected ;, instead got ', token[1])
+                    raise Exception('Expected ;, instead got ' + token[1])
                 return
             if token[1] == ';':
                 match(';')
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_selection_stmt():
             if not match('if'):
-                raise Exception("Expected if, instead got ", token[1])
+                raise Exception("Expected if, instead got " + token[1])
             if not match('('):
-                raise Exception("Expected (, instead got ", token[1])
+                raise Exception("Expected (, instead got " + token[1])
             handle_expression()
             if not match(')'):
-                raise Exception("Expected ), instead got ", token[1])
+                raise Exception("Expected ), instead got " + token[1])
             handle_statement()
             if not match('else'):
-                raise Exception("Expected else, instead got ", token[1])
+                raise Exception("Expected else, instead got " + token[1])
             handle_statement()
             return
 
         def handle_iteration_stmt():
             if not match('while'):
-                raise Exception("Expected while, instead got ", token[1])
+                raise Exception("Expected while, instead got " + token[1])
             if not match('('):
-                raise Exception("Expected (, instead got ", token[1])
+                raise Exception("Expected (, instead got " + token[1])
             handle_expression()
             if not match(')'):
-                raise Exception("Expected ), instead got ", token[1])
+                raise Exception("Expected ), instead got " + token[1])
             handle_statement()
             return
 
         def handle_return_stmt():
             if not match('return'):
-                raise Exception("Expected return, instead got ", token[1])
+                raise Exception("Expected return, instead got " + token[1])
             handle_return_stmt_prime()
             return
 
@@ -242,33 +246,33 @@ class Parser:
             if token in ['ID', 'NUM', '(']:
                 handle_expression()
                 if not match(';'):
-                    raise Exception("Expected ;, instead got ", token[1])
+                    raise Exception("Expected ;, instead got " + token[1])
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_switch_stmt():
             handle_switch_stmt()
             if not match('('):
-                raise Exception("Expected (, instead got ", token[1])
+                raise Exception("Expected (, instead got " + token[1])
             handle_expression()
             if not match(')'):
-                raise Exception("Expected ), instead got ", token[1])
+                raise Exception("Expected ), instead got " + token[1])
             if not match('{'):
-                raise Exception("Expected {, instead got ", token[1])
+                raise Exception("Expected {, instead got " + token[1])
             handle_case_stmt()
             handle_default_stmt()
             if not match('}'):
-                raise Exception("Expected }, instead got ", token[1])
+                raise Exception("Expected }, instead got " + token[1])
             return
 
         def handle_case_stmt():
             if not match('case'):
-                raise Exception("Expected case, instead got ", token[1])
+                raise Exception("Expected case, instead got " + token[1])
             if not match('NUM'):
-                raise Exception("Expected NUM, instead got ", token[1])
+                raise Exception("Expected NUM, instead got " + token[1])
             if not match(':'):
-                raise Exception("Expected :, instead got ", token[1])
+                raise Exception("Expected :, instead got " + token[1])
             handle_statement_list()
             return
 
@@ -276,13 +280,13 @@ class Parser:
             if token[1] == 'default':
                 match('default')
                 if not match(':'):
-                    raise Exception('Expected :, instead got ', token[1])
+                    raise Exception('Expected :, instead got ' + token[1])
                 handle_statement_list()
                 return
             if token[1] == '}':
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_expression():
             if token[1] == 'NUM':
@@ -299,13 +303,13 @@ class Parser:
                 match('(')
                 handle_expression()
                 if not match(')'):
-                    raise Exception("Expected ), instead got ", token[1])
+                    raise Exception("Expected ), instead got " + token[1])
                 handle_term_prime()
                 handle_additive_expression_prime()
                 handle_simple_expression_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_expression_prime():
             if token[1] in ['[', '=', '*', '+', '-', '==', '<']:
@@ -316,13 +320,13 @@ class Parser:
                 match('(')
                 handle_args()
                 if not match(')'):
-                    raise Exception("Expected ), instead got ", token[1])
+                    raise Exception("Expected ), instead got " + token[1])
                 handle_term_prime()
                 handle_additive_expression_prime()
                 handle_simple_expression_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_expression_zegond():
             if token[1] == '=':
@@ -335,7 +339,7 @@ class Parser:
                 handle_simple_expression_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_var():
             pass
@@ -348,10 +352,10 @@ class Parser:
                 match('[')
                 handle_expression()
                 if not match(']'):
-                    raise Exception("Expected ], instead got ", token[1])
+                    raise Exception("Expected ], instead got " + token[1])
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_simple_expression():
             pass
@@ -364,7 +368,7 @@ class Parser:
             if token[1] in [',', ')', ']', ';']:
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_relop():
             if token[1] == '==':
@@ -374,7 +378,7 @@ class Parser:
                 match('<')
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_additive_expression():
             if token in ['(', 'NUM', 'ID']:
@@ -382,7 +386,7 @@ class Parser:
                 handle_additive_expression_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_additive_expression_prime():
             if token[1] in ['==', '<', ',', ')', ']', ';']:
@@ -393,7 +397,7 @@ class Parser:
                 handle_additive_expression_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_addop():
             if token[1] == '+':
@@ -403,7 +407,7 @@ class Parser:
                 match('-')
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_term():
             if token[1] in ['(', 'NUM', 'ID']:
@@ -411,7 +415,7 @@ class Parser:
                 handle_term_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_term_prime():
             if token[1] == '*':
@@ -422,7 +426,7 @@ class Parser:
             if token[1] in ['==', '<', '+', '-', ')', ',', ']', ';']:
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_factor():
             if token[1] == 'NUM':
@@ -433,7 +437,7 @@ class Parser:
                 handle_factor_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_factor_prime():
             if token[1] == '[':
@@ -443,10 +447,10 @@ class Parser:
                 match('(')
                 handle_args()
                 if not match(')'):
-                    raise Exception("Expected ), instead got ", token[1])
+                    raise Exception("Expected ), instead got " + token[1])
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_call():
             pass
@@ -458,7 +462,7 @@ class Parser:
             if token[1] == ')':
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_arg_list():
             if token[1] in ['ID', '(', 'NUM']:
@@ -466,7 +470,7 @@ class Parser:
                 handle_arg_list_prime()
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def handle_arg_list_prime():
             if token[1] == ',':
@@ -478,7 +482,7 @@ class Parser:
                 match(')')
                 return
             else:
-                raise Exception("illegal ", token[1])
+                raise Exception("illegal " + token[1])
 
         def match(terminal: str):
             nonlocal token

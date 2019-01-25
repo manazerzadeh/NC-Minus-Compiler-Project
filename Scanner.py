@@ -1,6 +1,15 @@
 from SymbolTable import SymbolTable
-from Parser import keys
-from Parser import seperators
+
+
+terminals = ['EOF', 'ID', 'NUM', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
+    , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'NUM', 'default'
+    , ':', '<', '==', '+', '-', '*', '=']
+
+keys = ['EOF', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
+    , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'default', ':', '<'
+    , '==', '+', '-', '*', '=']
+
+seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '*', ' ', '\n']
 
 
 def check_num_id(token: str) -> str:

@@ -1,4 +1,4 @@
-int main(void):
-int x = 5;
-int 5sx2 = 6;
-return;
+int main(void){
+int x;
+x = 5;
+return;}
