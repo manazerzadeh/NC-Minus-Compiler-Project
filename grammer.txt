@@ -1,0 +1,43 @@
+program -> declaration-list EOF
+declaration-list -> declaration declaration-list_prime
+declaration-list_prime -> EPSILON | declaration
+declaration -> type-specifier ID declaration_prime
+declaration_prime -> var-dec_prime | ( params ) compound-stmt
+var-dec_prime -> ; |  / NUM \ ;
+type-specifier -> int | void
+params -> void params_prime | int ID param_prime param-list_prime
+params_prime -> ID param_prime param-list_prime | EPSILON
+param-list -> param param-list_prime
+param-list_prime -> EPSILON | , param
+param -> type-specifier ID param_prime
+param_prime -> / \ | EPSILON
+compound-stmt -> { declaration-list statement-list }
+statement-list -> EPSILON | statement statement-list
+statement -> expression-stmt | compound-stmt | selection-stmt | iteration-stmt | return-stmt | switch-stmt
+expression-stmt -> expression ; | continue ; | break ; | ;
+selection-stmt -> if ( expression ) statement else statement
+iteration-stmt -> while ( expression ) statement
+return-stmt -> return return-stmt_prime
+return-stmt_prime -> ; | expression ;
+switch-stmt -> switch ( expression ) { case-stmt default-stmt }
+case-stmt -> case NUM : statement-list
+default-stmt -> default : statement-list | EPSILON
+expression -> ID expression_prime | ( expression ) term_prime additive-expression_prime simple-expession_prime | NUM term_prime additive-expression_prime simple-expression_prime
+expression_prime -> ( args ) term_prime additive-expression_prime simple-expression_prime | var_prime expression_zegond
+expression_zegond -> = expression | term_prime additive-expression_prime simple-expression_prime
+var -> ID var_prime
+var_prime -> EPSILON | / expression \
+simple-expression -> additive-expression simple-expression_prime
+simple-expression_prime -> relop additive-expression | EPSILON
+relop -> == | < 
+additive-expression -> term addtive-expression_prime
+additive-expression_prime -> EPSILON | addop term additive-expression_prime
+addop -> + | -
+term -> factor term_prime
+term_prime -> * factor term_prime | EPSILON
+factor -> ( expression ) | NUM | ID factor_prime
+factor_prime -> var_prime | ( args )
+call -> ID ( args ) 
+args -> arg-list | EPSILON
+arg-list -> expression arglist_prime
+arglist_prime -> , expression arglist_prime | EPSILON
