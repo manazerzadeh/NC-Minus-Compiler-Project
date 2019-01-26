@@ -159,6 +159,7 @@ class Parser:
                             'switch', 'while']:
                 handle_statement()
                 handle_statement_list()
+                return
             if token[1] in ['}', 'default']:
                 return
             else:
@@ -240,10 +241,10 @@ class Parser:
             return
 
         def handle_return_stmt_prime():
-            if token == ';':
+            if token[1] == ';':
                 match(';')
                 return
-            if token in ['ID', 'NUM', '(']:
+            if token[1] in ['ID', 'NUM', '(']:
                 handle_expression()
                 if not match(';'):
                     raise Exception("Expected ;, instead got " + token[1])

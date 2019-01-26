@@ -1,6 +1,5 @@
 from SymbolTable import SymbolTable
 
-
 terminals = ['EOF', 'ID', 'NUM', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
     , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'NUM', 'default'
     , ':', '<', '==', '+', '-', '*', '=']
@@ -9,7 +8,7 @@ keys = ['EOF', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
     , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'default', ':', '<'
     , '==', '+', '-', '*', '=']
 
-seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '*', ' ', '\n']
+seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '*', ' ', '\n', 'EOF']
 
 
 def check_num_id(token: str) -> str:
@@ -45,7 +44,7 @@ class Scanner:
             char = self.get_char()
             if char == -1:
                 if len(token) == 0:
-                    return
+                    return 'EOF', 'EOF'
                 elif token not in keys:
                     symbol_type = check_num_id(token)
                     if not self.symbol_table.is_in_table(token):
