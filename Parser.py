@@ -1,6 +1,8 @@
 from SymbolTable import SymbolTable
 from typing import *
 from Scanner import Scanner
+from Semantic_analyser import SemanticAnalyser
+from MemoryManager import MemoryManager
 
 terminals = ['EOF', 'ID', 'NUM', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
     , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'NUM', 'default'
@@ -16,9 +18,12 @@ seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '
 class Parser:
     def __init__(self, file_name):
         self.symbol_table = SymbolTable()
+        self.pc = 0
         self.semantic_stack: List[int] = []
-        self.scope_stack: List[int] = []
+        self.scope_stack: List[int] = [0]
+        self.memory_manager = MemoryManager()
         self.scanner = Scanner(file_name, self.symbol_table)
+        self.semantic_analyser = SemanticAnalyser(self.symbol_table, self.scope_stack, self.pc, self.memory_manager)
 
     def parse(self):
         def handle_program():
@@ -28,35 +33,38 @@ class Parser:
             return
 
         def handle_declaration_list():
-            handle_declaration()
-            handle_declaration_list_prime()
-            return
-
-        def handle_declaration_list_prime():
             if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM', 'if', 'return',
                             '{', 'switch', 'while', 'EOF']:
                 return
             elif token[1] in ['int', 'void']:
                 handle_declaration()
-                return
+                handle_declaration_list()
             else:
                 raise Exception("illegal " + token[1])
 
         def handle_declaration():
             handle_type_specifier()
+            self.semantic_analyser.analyse_token(prev_token, 'save_type')
             if not match('ID'):
                 raise Exception("Expected ID, instead got " + token[1])
+            self.semantic_analyser.analyse_token(prev_token, 'save_token')
+            self.semantic_analyser.analyse_token(prev_token, 'check_if_dec_before')
             handle_declaration_prime()
+            self.semantic_analyser.analyse_token(None, 'pop_token_and_saved_type')
             return
 
         def handle_declaration_prime():
             if token[1] in [';', '[']:
+                self.semantic_analyser.analyse_token(None, 'check_saved_type')
                 handle_var_declaration_prime()
+                self.semantic_analyser.analyse_token(prev_token, 'allocate_memory')
                 return
             elif token[1] in ['(']:
+                self.semantic_analyser.analyse_token(None, 'determine_start_address')
                 if not match('('):
                     raise Exception("Expected (, instead got " + token[1])
                 handle_params()
+                self.semantic_analyser.analyse_token(None, 'assign_dim')
                 if not match(')'):
                     raise Exception("Expected ), instead got " + token[1])
                 handle_compound_stmt()
@@ -72,6 +80,7 @@ class Parser:
                 match('[')
                 if not match('NUM'):
                     raise Exception("Expected NUM instead got " + token[1])
+                self.semantic_analyser.analyse_token(None, 'update_dim')
                 if not match(']'):
                     raise Exception("Expected ] instead got " + token[1])
                 if not match(';'):
@@ -82,6 +91,7 @@ class Parser:
 
         def handle_type_specifier():
             if token[1] in ['int']:
+                self.semantic_analyser.analyse_token(None, 'add_dim')
                 match('int')
                 return
             if token[1] in ['void']:
@@ -93,8 +103,10 @@ class Parser:
         def handle_params_prime():
             if token[1] == 'ID':
                 match('ID')
+                self.semantic_analyser.analyse_token(None, 'illegal_ID_after_void')
                 handle_param_prime()
                 handle_param_list_prime()
+                self.semantic_analyser.analyse_token(None, 'add_dim')
                 return
             if token[1] == ')':
                 return
@@ -110,6 +122,7 @@ class Parser:
                 match('int')
                 if not match('ID'):
                     raise Exception("Expected ID, instead got " + token[1])
+                self.semantic_analyser.analyse_token(None, 'add_dim')
                 handle_param_prime()
                 handle_param_list_prime()
                 return
@@ -132,7 +145,9 @@ class Parser:
 
         def handle_param():
             handle_type_specifier()
+            self.semantic_analyser.analyse_token(prev_token, 'check_type')
             match('ID')
+            self.semantic_analyser.analyse_token(prev_token, 'add_dim')
             handle_param_prime()
 
         def handle_param_prime():
@@ -149,8 +164,10 @@ class Parser:
         def handle_compound_stmt():
             if not match('{'):
                 raise Exception("Expected {, instead got " + token[1])
+            self.semantic_analyser.analyse_token(None, 'update_scope')
             handle_declaration_list()
             handle_statement_list()
+            self.semantic_analyser.analyse_token(None, 'remove_prev_scope')
             if not match('}'):
                 raise Exception("Expected }, instead got " + token[1])
 
@@ -160,7 +177,7 @@ class Parser:
                 handle_statement()
                 handle_statement_list()
                 return
-            if token[1] in ['}', 'default']:
+            if token[1] in ['}', 'default', 'case']:
                 return
             else:
                 raise Exception("illegal " + token[1])
@@ -253,7 +270,8 @@ class Parser:
                 raise Exception("illegal " + token[1])
 
         def handle_switch_stmt():
-            handle_switch_stmt()
+            if not match('switch'):
+                raise Exception("Expected switch, instead got " + token[1])
             if not match('('):
                 raise Exception("Expected (, instead got " + token[1])
             handle_expression()
@@ -261,11 +279,18 @@ class Parser:
                 raise Exception("Expected ), instead got " + token[1])
             if not match('{'):
                 raise Exception("Expected {, instead got " + token[1])
-            handle_case_stmt()
+            handle_case_stmts()
             handle_default_stmt()
             if not match('}'):
                 raise Exception("Expected }, instead got " + token[1])
             return
+
+        def handle_case_stmts():
+            if token[1] in ['ID', '(', 'NUM', 'default']:
+                return
+            if token[1] == 'case':
+                handle_case_stmt()
+                handle_case_stmts()
 
         def handle_case_stmt():
             if not match('case'):
@@ -298,7 +323,9 @@ class Parser:
                 return
             if token[1] == 'ID':
                 match('ID')
+                self.semantic_analyser.analyse_token(prev_token, 'check_id_save')
                 handle_expression_prime()
+                self.semantic_analyser.analyse_token(None, 'remove_id')
                 return
             if token[1] == '(':
                 match('(')
@@ -313,13 +340,14 @@ class Parser:
                 raise Exception("illegal " + token[1])
 
         def handle_expression_prime():
-            if token[1] in ['[', '=', '*', '+', '-', '==', '<']:
+            if token[1] in ['[', '=', '*', '+', '-', '==', '<', ')', ';', ']']:
                 handle_var_prime()
                 handle_expression_zegond()
                 return
             if token[1] == '(':
                 match('(')
                 handle_args()
+                self.semantic_analyser.analyse_token(None, 'check_dim')
                 if not match(')'):
                     raise Exception("Expected ), instead got " + token[1])
                 handle_term_prime()
@@ -334,7 +362,7 @@ class Parser:
                 match('=')
                 handle_expression()
                 return
-            if token[1] in ['*', '+', '-', '==', '<']:
+            if token[1] in ['*', '+', '-', '==', '<', ')', ';', ']']:
                 handle_term_prime()
                 handle_additive_expression_prime()
                 handle_simple_expression_prime()
@@ -382,7 +410,7 @@ class Parser:
                 raise Exception("illegal " + token[1])
 
         def handle_additive_expression():
-            if token in ['(', 'NUM', 'ID']:
+            if token[1] in ['(', 'NUM', 'ID']:
                 handle_term()
                 handle_additive_expression_prime()
                 return
@@ -435,6 +463,7 @@ class Parser:
                 return
             if token[1] == 'ID':
                 match('ID')
+                self.semantic_analyser.analyse_token(prev_token, 'check_id_save')
                 handle_factor_prime()
                 return
             else:
@@ -447,6 +476,7 @@ class Parser:
             if token[1] == '(':
                 match('(')
                 handle_args()
+                self.semantic_analyser.analyse_token(None, 'check_dim')
                 if not match(')'):
                     raise Exception("Expected ), instead got " + token[1])
                 return
@@ -467,6 +497,7 @@ class Parser:
 
         def handle_arg_list():
             if token[1] in ['ID', '(', 'NUM']:
+                self.semantic_analyser.analyse_token(None, 'add_dim')
                 handle_expression()
                 handle_arg_list_prime()
                 return
@@ -475,23 +506,29 @@ class Parser:
 
         def handle_arg_list_prime():
             if token[1] == ',':
+                self.semantic_analyser.analyse_token(None, 'add_dim')
                 match(',')
                 handle_expression()
                 handle_arg_list_prime()
                 return
             if token[1] == ')':
-                match(')')
                 return
             else:
                 raise Exception("illegal " + token[1])
 
         def match(terminal: str):
             nonlocal token
+            nonlocal prev_token
             if token[1] == terminal:
+                prev_token = (token[0], token[1])
                 token = self.scanner.get_token()
                 return True
             return False
 
+        # todo: implement panic mode
+        # todo: comment handler
+
+        prev_token: (str, str) = (None, None)
         token: (str, str)
         token = self.scanner.get_token()
         handle_program()
