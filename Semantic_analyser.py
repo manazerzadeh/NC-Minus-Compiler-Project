@@ -41,6 +41,9 @@ class SemanticAnalyser:
             self.dim = 0
             return
         if action == 'determine_start_address_return_address':
+            # todo: check this again later. Reason is that if we defined an int function dim would be added here we
+            #  decrease it
+            self.dim = 0
             entry = self.symbol_table.find_symbol(self.ss[-1][0])
             entry.scope = self.scope_stack[-1]
             entry.address = self.pc
@@ -73,7 +76,7 @@ class SemanticAnalyser:
             self.scope_stack.pop()
             return
         if action == 'check_id_save':
-            if self.symbol_table.find_symbol_in_scope(token[0], self.scope_stack[-1]) is None:
+            if self.symbol_table.find_symbol(token[0]) is None:
                 raise Exception("Undefined variable")
             self.ss.append(token)
             return
@@ -81,7 +84,8 @@ class SemanticAnalyser:
             self.ss.pop()
             return
         if action == 'check_dim':
-            if self.dim != self.ss[-1].dimension:
+            entry = self.symbol_table.find_symbol(self.ss[-1][0])
+            if self.dim != entry.dimension:
                 raise Exception("Dimension isn't correct")
             self.dim = 0
             return

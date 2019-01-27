@@ -1,6 +1,6 @@
 class MemoryManager:
     def __init__(self):
-        self.dynamic_pointer = 100
+        self.dynamic_pointer = 200
         self.temp_pointer = 500
 
     def get_dynamic(self, dimension: int = 1):

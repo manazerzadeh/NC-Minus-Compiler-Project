@@ -31,6 +31,7 @@ class Parser:
             handle_declaration_list()
             if not match('EOF'):
                 raise Exception("expected EOF, instead got " + token[1])
+            # todo: self.code_generator.code_gen_token(None, 'main_return_addr')
             return
 
         def handle_declaration_list():

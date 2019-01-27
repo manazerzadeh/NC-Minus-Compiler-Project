@@ -10,7 +10,7 @@ class CodeGenerator:
         self.memory_manager = memory_manager
         self.pc = pc
         self.sign_flag = False
-        self.PB = []
+        self.PB = [None] * 200
         self.scope_stack = scope_stack
 
     def find_address(self, token: (str, str)):
@@ -59,6 +59,7 @@ class CodeGenerator:
             self.PB[self.pc] = ('JP', '@' + str(self.semantic_stack[-1]),)
             self.semantic_stack.pop()
             self.pc += 1
+            return
         if action == 'call_function':
             return_addr = int(self.semantic_stack[-1])
             self.PB[self.pc] = ('ASSIGN', self.pc + 2, return_addr,)
@@ -73,6 +74,9 @@ class CodeGenerator:
         if action == 'p_return':
             return_addr = self.find_return_address(token)
             self.semantic_stack.append(return_addr)
+            return
+            if token[0] == 'main':
+                self.semantic_stack.append(return_addr)
             return
         if action == 'pnum':
             self.semantic_stack.append('#' + token[0])
@@ -138,4 +142,10 @@ class CodeGenerator:
             self.semantic_stack.pop()
             self.semantic_stack.append(temp_addr)
             self.pc += 1
-
+            return
+        # todo: handle switch case
+        # todo: handle main return
+        """""""""
+        if action == 'main_return_addr':
+            self.PB[self.pc] 
+        """""""""
