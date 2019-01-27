@@ -3,12 +3,13 @@ from typing import *
 
 class SymbolTableEntry:
     def __init__(self, symbol_name: str, symbol_type: str, scope: int = None, dimension: int = None,
-                 address: int = None):
+                 address: int = None, return_address: int = None):
         self.symbolName = symbol_name
         self.symbol_type = symbol_type
         self.scope = scope
         self.dimension = dimension
         self.address = address
+        self.return_address = return_address
 
 
 class SymbolTable:
@@ -20,7 +21,7 @@ class SymbolTable:
         self.entries.append(symbol)
 
     def find_symbol(self, symbol_name: str):  # will be used in semantic analysis
-        for entry in self.entries:
+        for entry in reversed(self.entries):
             if entry.symbolName == symbol_name:
                 return entry
         return None

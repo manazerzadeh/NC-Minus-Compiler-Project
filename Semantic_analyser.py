@@ -13,6 +13,8 @@ class SemanticAnalyser:
         self.dim = 0
 
     def analyse_token(self, token: (str, str), action: str):
+        # todo: handle_sign... update: Codegen is doing that!
+
         if action == 'save_type':
             self.ss.append(token[1])
             return
@@ -38,10 +40,11 @@ class SemanticAnalyser:
             entry.dimension = self.dim
             self.dim = 0
             return
-        if action == 'determine_start_address':
+        if action == 'determine_start_address_return_address':
             entry = self.symbol_table.find_symbol(self.ss[-1][0])
             entry.scope = self.scope_stack[-1]
             entry.address = self.pc
+            entry.return_address = self.memory_manager.get_dynamic()
             return
         if action == 'assign_dim':
             entry = self.symbol_table.find_symbol_in_scope(self.ss[-1][0], self.scope_stack[-1])

@@ -3,6 +3,7 @@ from typing import *
 from Scanner import Scanner
 from Semantic_analyser import SemanticAnalyser
 from MemoryManager import MemoryManager
+from CodeGenerator import CodeGenerator
 
 terminals = ['EOF', 'ID', 'NUM', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
     , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'NUM', 'default'
@@ -19,11 +20,11 @@ class Parser:
     def __init__(self, file_name):
         self.symbol_table = SymbolTable()
         self.pc = 0
-        self.semantic_stack: List[int] = []
         self.scope_stack: List[int] = [0]
         self.memory_manager = MemoryManager()
         self.scanner = Scanner(file_name, self.symbol_table)
         self.semantic_analyser = SemanticAnalyser(self.symbol_table, self.scope_stack, self.pc, self.memory_manager)
+        self.code_generator = CodeGenerator(self.symbol_table, self.memory_manager, self.pc, self.scope_stack)
 
     def parse(self):
         def handle_program():
@@ -34,7 +35,7 @@ class Parser:
 
         def handle_declaration_list():
             if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM', 'if', 'return',
-                            '{', 'switch', 'while', 'EOF']:
+                            '{', 'switch', 'while', 'EOF', '-']:
                 return
             elif token[1] in ['int', 'void']:
                 handle_declaration()
@@ -60,7 +61,8 @@ class Parser:
                 self.semantic_analyser.analyse_token(prev_token, 'allocate_memory')
                 return
             elif token[1] in ['(']:
-                self.semantic_analyser.analyse_token(None, 'determine_start_address')
+                self.semantic_analyser.analyse_token(None, 'determine_start_address_return_address')
+                self.code_generator.code_gen_token(prev_token, 'p_return')
                 if not match('('):
                     raise Exception("Expected (, instead got " + token[1])
                 handle_params()
@@ -173,7 +175,7 @@ class Parser:
 
         def handle_statement_list():
             if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM', 'if', 'return', '{',
-                            'switch', 'while']:
+                            'switch', 'while', '-']:
                 handle_statement()
                 handle_statement_list()
                 return
@@ -183,7 +185,7 @@ class Parser:
                 raise Exception("illegal " + token[1])
 
         def handle_statement():
-            if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM']:
+            if token[1] in ['continue', 'break', ';', 'ID', '(', 'NUM', '-']:
                 handle_expression_stmt()
                 return
             if token[1] == '{':
@@ -205,7 +207,8 @@ class Parser:
                 raise Exception("illegal " + token[1])
 
         def handle_expression_stmt():
-            if token[1] in ['ID', '(', 'NUM']:
+            if token[1] in ['ID', '(', 'NUM', '-']:
+                handle_Nsign()
                 handle_expression()
                 if not match(';'):
                     raise Exception('Expected ;, instead got ' + token[1])
@@ -234,27 +237,34 @@ class Parser:
             handle_expression()
             if not match(')'):
                 raise Exception("Expected ), instead got " + token[1])
+            self.code_generator.code_gen_token(None , 'save')
             handle_statement()
             if not match('else'):
                 raise Exception("Expected else, instead got " + token[1])
+            self.code_generator.code_gen_token(None, 'jpf_save')
             handle_statement()
+            self.code_generator.code_gen_token(None, 'jp')
             return
 
         def handle_iteration_stmt():
             if not match('while'):
                 raise Exception("Expected while, instead got " + token[1])
+            self.code_generator.code_gen_token(None, 'label')
             if not match('('):
                 raise Exception("Expected (, instead got " + token[1])
             handle_expression()
             if not match(')'):
                 raise Exception("Expected ), instead got " + token[1])
+            self.code_generator.code_gen_token(None, 'save')
             handle_statement()
+            self.code_generator.code_gen_token(None, 'while')
             return
 
         def handle_return_stmt():
             if not match('return'):
                 raise Exception("Expected return, instead got " + token[1])
             handle_return_stmt_prime()
+            self.code_generator.code_gen_token(None, 'handle_return')
             return
 
         def handle_return_stmt_prime():
@@ -317,6 +327,7 @@ class Parser:
         def handle_expression():
             if token[1] == 'NUM':
                 match('NUM')
+                self.code_generator.code_gen_token(prev_token, 'pnum')
                 handle_term_prime()
                 handle_additive_expression_prime()
                 handle_simple_expression_prime()
@@ -324,6 +335,7 @@ class Parser:
             if token[1] == 'ID':
                 match('ID')
                 self.semantic_analyser.analyse_token(prev_token, 'check_id_save')
+                self.code_generator.code_gen_token(prev_token, 'pid')
                 handle_expression_prime()
                 self.semantic_analyser.analyse_token(None, 'remove_id')
                 return
@@ -345,11 +357,13 @@ class Parser:
                 handle_expression_zegond()
                 return
             if token[1] == '(':
+                self.code_generator.code_gen_token(prev_token, 'p_return')
                 match('(')
                 handle_args()
                 self.semantic_analyser.analyse_token(None, 'check_dim')
                 if not match(')'):
                     raise Exception("Expected ), instead got " + token[1])
+                self.code_generator.code_gen_token(None, 'call_function')
                 handle_term_prime()
                 handle_additive_expression_prime()
                 handle_simple_expression_prime()
@@ -361,6 +375,7 @@ class Parser:
             if token[1] == '=':
                 match('=')
                 handle_expression()
+                self.code_generator.code_gen_token(None, 'assign')
                 return
             if token[1] in ['*', '+', '-', '==', '<', ')', ';', ']']:
                 handle_term_prime()
@@ -380,6 +395,7 @@ class Parser:
             if token[1] == '[':
                 match('[')
                 handle_expression()
+                self.code_generator.code_gen_token(None, 'address_update')
                 if not match(']'):
                     raise Exception("Expected ], instead got " + token[1])
                 return
@@ -393,6 +409,7 @@ class Parser:
             if token[1] in ['==', '<']:
                 handle_relop()
                 handle_additive_expression()
+                self.code_generator.code_gen_token(None, 'handle_relop')
                 return
             if token[1] in [',', ')', ']', ';']:
                 return
@@ -402,9 +419,11 @@ class Parser:
         def handle_relop():
             if token[1] == '==':
                 match('==')
+                self.code_generator.code_gen_token(prev_token, 'prelop')
                 return
             if token[1] == '<':
                 match('<')
+                self.code_generator.code_gen_token(prev_token, 'prelop')
                 return
             else:
                 raise Exception("illegal " + token[1])
@@ -423,6 +442,7 @@ class Parser:
             if token[1] in ['+', '-']:
                 handle_addop()
                 handle_term()
+                self.code_generator.code_gen_token(None, 'handle_addop')
                 handle_additive_expression_prime()
                 return
             else:
@@ -431,9 +451,11 @@ class Parser:
         def handle_addop():
             if token[1] == '+':
                 match('+')
+                self.code_generator.code_gen_token(prev_token, 'addop')
                 return
             if token[1] == '-':
                 match('-')
+                self.code_generator.code_gen_token(prev_token, 'addop')
                 return
             else:
                 raise Exception("illegal " + token[1])
@@ -450,6 +472,7 @@ class Parser:
             if token[1] == '*':
                 match('*')
                 handle_factor()
+                self.code_generator.code_gen_token(None, 'mult')
                 handle_term_prime()
                 return
             if token[1] in ['==', '<', '+', '-', ')', ',', ']', ';']:
@@ -460,11 +483,14 @@ class Parser:
         def handle_factor():
             if token[1] == 'NUM':
                 match('NUM')
+                self.code_generator.code_gen_token(prev_token, 'pnum')
                 return
             if token[1] == 'ID':
                 match('ID')
                 self.semantic_analyser.analyse_token(prev_token, 'check_id_save')
+                self.code_generator.code_gen_token(prev_token, 'pid')
                 handle_factor_prime()
+                self.semantic_analyser.analyse_token(None, 'remove_id')
                 return
             else:
                 raise Exception("illegal " + token[1])
@@ -515,6 +541,11 @@ class Parser:
                 return
             else:
                 raise Exception("illegal " + token[1])
+
+        def handle_Nsign():
+            if token[1] == '-':
+                match('-')
+                self.code_generator.code_gen_token(None, 'handle_sign')
 
         def match(terminal: str):
             nonlocal token

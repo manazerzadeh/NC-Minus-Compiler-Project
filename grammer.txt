@@ -1,16 +1,16 @@
 program -> declaration-list EOF
 declaration-list -> EPSILON | declaration declaration-list
-declaration ->  type-specifier#save_type ID#save_token #check_if_dec_before declaration_prime #pop_token_and_saved_type
-declaration_prime -> #check_saved_type var-dec_prime #allocate_memory |   #determine_start_address( params #assign_dim ) compound-stmt
-var-dec_prime -> ; |  / NUM#update_dim \ ;
-type-specifier -> #add_dim int | void
-params -> void params_prime | int ID#add_dim param_prime param-list_prime
-params_prime -> ID #illegal_ID_after_void param_prime param-list_prime  #add_dim | EPSILON 
+declaration ->  type-specifier ID declaration_prime 
+declaration_prime ->  var-dec_prime |   ( params ) compound-stmt
+var-dec_prime -> ; |  / NUM \ ;
+type-specifier ->  int | void
+params -> void params_prime | int ID param_prime param-list_prime
+params_prime -> ID param_prime param-list_prime  | EPSILON 
 param-list -> param param-list_prime
 param-list_prime -> EPSILON |  , param
-param -> type-specifier#check_type ID #add_dim param_prime
+param -> type-specifier ID param_prime
 param_prime -> / \ | EPSILON
-compound-stmt -> {#update_scope declaration-list statement-list  #remove_prev_scope}
+compound-stmt -> { declaration-list statement-list  }
 statement-list -> EPSILON | statement statement-list
 statement -> expression-stmt | compound-stmt | selection-stmt | iteration-stmt | return-stmt | switch-stmt
 expression-stmt -> expression ; | continue ; | break ; | ;
@@ -22,8 +22,8 @@ switch-stmt -> switch ( expression ) { case-stmts default-stmt }
 case-stmts -> EPSILON | case-stmt case-stmts
 case-stmt -> case NUM : statement-list
 default-stmt -> default : statement-list | EPSILON
-expression -> ID#check_id_save expression_prime #remove_id | ( expression ) term_prime additive-expression_prime simple-expession_prime | NUM term_prime additive-expression_prime simple-expression_prime
-expression_prime -> ( args #check_dim ) term_prime additive-expression_prime simple-expression_prime | var_prime expression_zegond
+expression -> ID expression_prime | ( expression ) term_prime additive-expression_prime simple-expession_prime | NUM term_prime additive-expression_prime simple-expression_prime
+expression_prime -> ( args ) term_prime additive-expression_prime simple-expression_prime | var_prime expression_zegond
 expression_zegond -> = expression | term_prime additive-expression_prime simple-expression_prime
 var -> ID var_prime
 var_prime -> EPSILON | / expression \
@@ -35,9 +35,9 @@ additive-expression_prime -> EPSILON | addop term additive-expression_prime
 addop -> + | -
 term -> factor term_prime
 term_prime -> * factor term_prime | EPSILON
-factor -> ( expression ) | NUM | ID#check_id_save factor_prime #remove_id
-factor_prime -> var_prime | ( args #check_dim )
+factor -> ( expression ) | NUM | ID factor_prime 
+factor_prime -> var_prime | ( args )
 call -> ID ( args ) 
 args -> arg-list | EPSILON
-arg-list -> #add_dim expression arglist_prime
-arglist_prime ->#add_dim , expression arglist_prime | EPSILON
+arg-list -> expression arglist_prime
+arglist_prime -> , expression arglist_prime | EPSILON
