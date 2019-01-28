@@ -40,6 +40,10 @@ class SemanticAnalyser:
             entry.dimension = self.dim
             self.dim = 0
             return
+        if action == 'allocate_memory_param':
+            entry = self.symbol_table.find_symbol(token[0])
+            entry.address = self.memory_manager.get_dynamic()
+            return
         if action == 'determine_start_address_return_address':
             # todo: check this again later. Reason is that if we defined an int function dim would be added here we
             #  decrease it

@@ -12,6 +12,8 @@ class CodeGenerator:
         self.sign_flag = False
         self.PB = [None] * 200
         self.scope_stack = scope_stack
+        self.input_addr = 0
+        self.output_mode = False
 
     def find_address(self, token: (str, str)):
         entry = self.symbol_table.find_symbol(token[0])
@@ -47,13 +49,42 @@ class CodeGenerator:
             self.semantic_stack.append(self.pc)
             self.pc += 1
             return
+        if action == 'continue':
+            self.PB[self.pc] = ('JP', self.semantic_stack[-3])
+            self.pc += 1
+            return
+        if action == 'break':
+            self.PB[self.pc] = ('JP', self.semantic_stack[-4])# todo: check it. I think for switch index is -5 and for whiel is -4
+            self.pc += 1
+            return
         if action == 'while':
             self.PB[int(self.semantic_stack[-1])] = ('JPF', self.semantic_stack[-2], self.pc + 1,)
-            self.PB[self.pc] = ('JP', self.semantic_stack[-2],)
+            self.PB[self.pc] = ('JP', self.semantic_stack[-3],)
+            self.PB[int(self.semantic_stack[-4])] = ('JP', self.pc + 1,)
             self.pc += 1
             self.semantic_stack.pop()
             self.semantic_stack.pop()
             self.semantic_stack.pop()
+            self.semantic_stack.pop()
+            return
+        if action == 'switch':
+            self.PB[int(self.semantic_stack[-2])] = ('JP', self.pc, )
+            self.semantic_stack.pop()
+            self.semantic_stack.pop()
+            return
+        if action == 'case':
+            self.PB[int(self.semantic_stack[-1])] = ('JPF', self.semantic_stack[-2], self.pc)
+            self.semantic_stack.pop()
+            self.semantic_stack.pop()
+            return
+        if action == 'cmp_save':
+            temp_addr = self.memory_manager.get_temp()
+            self.PB[self.pc] = ('EQ', self.semantic_stack[-1], self.semantic_stack[-2], temp_addr)
+            self.pc += 1
+            self.semantic_stack.pop()
+            self.semantic_stack.append(temp_addr)
+            self.semantic_stack.append(self.pc)
+            self.pc += 1
             return
         if action == 'handle_return':
             self.PB[self.pc] = ('JP', '@' + str(self.semantic_stack[-1]),)
@@ -61,11 +92,18 @@ class CodeGenerator:
             self.pc += 1
             return
         if action == 'call_function':
+            if self.output_mode:
+                self.semantic_stack.pop()
+                self.semantic_stack.pop()
+                self.output_mode = False
+                return
             return_addr = int(self.semantic_stack[-1])
             self.PB[self.pc] = ('ASSIGN', self.pc + 2, return_addr,)
             self.pc += 1
             self.PB[self.pc] = ('JP', self.semantic_stack[-2],)
             self.pc += 1
+            self.semantic_stack.pop()
+            self.semantic_stack.pop()
             return
         if action == 'pid':
             addr = self.find_address(token)
@@ -73,10 +111,17 @@ class CodeGenerator:
             return
         if action == 'p_return':
             return_addr = self.find_return_address(token)
+            if token[0] == 'output':
+                self.output_mode = True
+                self.semantic_stack.append(return_addr)
+                return
+            self.input_addr = return_addr + 4
             self.semantic_stack.append(return_addr)
-            return
             if token[0] == 'main':
                 self.semantic_stack.append(return_addr)
+                # first block of PB reserved for jump to main at first of program
+                self.PB[0] = ('JP', '#' + str(self.pc))
+
             return
         if action == 'pnum':
             self.semantic_stack.append('#' + token[0])
@@ -143,9 +188,27 @@ class CodeGenerator:
             self.semantic_stack.append(temp_addr)
             self.pc += 1
             return
+        if action == 'put_input':
+            arg = self.semantic_stack[-1]
+            if self.output_mode:
+                self.PB[self.pc] = ('PRINT', arg)
+            elif arg[0] == '#':
+                self.PB[self.pc] = ('ASSIGN', self.semantic_stack[-1], self.input_addr)
+                self.input_addr += 4
+            else:
+                entry = self.symbol_table.find_symbol(token[0])
+                dim = entry.dimension
+                self.PB[self.pc] = ('ASSIGN', self.semantic_stack[-1], self.input_addr)
+                self.input_addr += 4 * dim
+            self.pc += 1
+            self.semantic_stack.pop()
+            return
+
         # todo: handle switch case
+        # todo: handle continue and break
         # todo: handle main return
-        """""""""
+
         if action == 'main_return_addr':
-            self.PB[self.pc] 
-        """""""""
+            # second block of PB is reserved for main
+            self.PB[1] = ('ASSIGN', '#' + str(self.pc), self.semantic_stack[-1])
+            self.semantic_stack.pop()

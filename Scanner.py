@@ -8,7 +8,7 @@ keys = ['EOF', 'int', 'void', '[', ']', ';', '(', ')', ',', 'continue', 'break'
     , 'if', 'else', 'while', 'return', 'switch', '{', '}', 'case', 'default', ':', '<'
     , '==', '+', '-', '*', '=']
 
-seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '*', ' ', '\n', 'EOF']
+seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '*', ' ', '\n', 'EOF', '\t']
 
 
 def check_num_id(token: str) -> str:
@@ -74,7 +74,7 @@ class Scanner:
                         token += char
                 else:
                     if char in seperators:
-                        if char == ' ' or char == '\n':
+                        if char == ' ' or char == '\n' or char == '\t':
                             continue
                         if char == '=':
                             token += char

@@ -1,4 +1,4 @@
-from SymbolTable import SymbolTable
+from SymbolTable import SymbolTable, SymbolTableEntry
 from typing import *
 from Scanner import Scanner
 from Semantic_analyser import SemanticAnalyser
@@ -19,7 +19,8 @@ seperators = ['[', ']', ';', '(', ')', ',', '{', '}', ':', '<', '=', '+', '-', '
 class Parser:
     def __init__(self, file_name):
         self.symbol_table = SymbolTable()
-        self.pc = 0
+        self.pc = 2
+        self.symbol_table.entries.append(SymbolTableEntry('output', 'ID', None, 1, None, None))
         self.scope_stack: List[int] = [0]
         self.memory_manager = MemoryManager()
         self.scanner = Scanner(file_name, self.symbol_table)
@@ -32,6 +33,7 @@ class Parser:
             if not match('EOF'):
                 raise Exception("expected EOF, instead got " + token[1])
             # todo: self.code_generator.code_gen_token(None, 'main_return_addr')
+            self.code_generator.code_gen_token(None, 'main_return_addr')
             return
 
         def handle_declaration_list():
@@ -126,6 +128,7 @@ class Parser:
                 if not match('ID'):
                     raise Exception("Expected ID, instead got " + token[1])
                 self.semantic_analyser.analyse_token(None, 'add_dim')
+                self.semantic_analyser.analyse_token(prev_token, 'allocate_memory_param')
                 handle_param_prime()
                 handle_param_list_prime()
                 return
@@ -151,6 +154,7 @@ class Parser:
             self.semantic_analyser.analyse_token(prev_token, 'check_type')
             match('ID')
             self.semantic_analyser.analyse_token(prev_token, 'add_dim')
+            self.semantic_analyser.analyse_token(prev_token, 'allocate_memory_param')
             handle_param_prime()
 
         def handle_param_prime():
@@ -216,11 +220,13 @@ class Parser:
                 return
             if token[1] == 'continue':
                 match('continue')
+                self.code_generator.code_gen_token(None, 'continue')
                 if not match(';'):
                     raise Exception('Expected ;, instead got ' + token[1])
                 return
             if token[1] == 'break':
                 match('break')
+                self.code_generator.code_gen_token(None, 'break')
                 if not match(';'):
                     raise Exception('Expected ;, instead got ' + token[1])
                 return
@@ -248,6 +254,7 @@ class Parser:
             return
 
         def handle_iteration_stmt():
+            self.code_generator.code_gen_token(None, 'save')
             if not match('while'):
                 raise Exception("Expected while, instead got " + token[1])
             self.code_generator.code_gen_token(None, 'label')
@@ -281,6 +288,7 @@ class Parser:
                 raise Exception("illegal " + token[1])
 
         def handle_switch_stmt():
+            self.code_generator.code_gen_token(None, 'save')
             if not match('switch'):
                 raise Exception("Expected switch, instead got " + token[1])
             if not match('('):
@@ -292,6 +300,7 @@ class Parser:
                 raise Exception("Expected {, instead got " + token[1])
             handle_case_stmts()
             handle_default_stmt()
+            self.code_generator.code_gen_token(None, 'switch')
             if not match('}'):
                 raise Exception("Expected }, instead got " + token[1])
             return
@@ -301,6 +310,7 @@ class Parser:
                 return
             if token[1] == 'case':
                 handle_case_stmt()
+                self.code_generator.code_gen_token(None, 'case')
                 handle_case_stmts()
 
         def handle_case_stmt():
@@ -308,6 +318,8 @@ class Parser:
                 raise Exception("Expected case, instead got " + token[1])
             if not match('NUM'):
                 raise Exception("Expected NUM, instead got " + token[1])
+            self.code_generator.code_gen_token(prev_token, 'pnum')
+            self.code_generator.code_gen_token(None, 'cmp_save')
             if not match(':'):
                 raise Exception("Expected :, instead got " + token[1])
             handle_statement_list()
@@ -526,6 +538,7 @@ class Parser:
             if token[1] in ['ID', '(', 'NUM']:
                 self.semantic_analyser.analyse_token(None, 'add_dim')
                 handle_expression()
+                self.code_generator.code_gen_token(prev_token, 'put_input')
                 handle_arg_list_prime()
                 return
             else:
@@ -559,8 +572,17 @@ class Parser:
 
         # todo: implement panic mode
         # todo: comment handler
-
+        # todo: implement output function
         prev_token: (str, str) = (None, None)
         token: (str, str)
         token = self.scanner.get_token()
         handle_program()
+        out = open('output.txt', 'w')
+        counter = 0
+        for line in self.code_generator.PB:
+            if line is None:
+                break
+            out.write(str(counter) + '\t' + str(line) + '\n')
+            counter += 1
+        out.close()
+

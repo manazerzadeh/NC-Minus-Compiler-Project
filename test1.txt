@@ -1,7 +1,19 @@
-int hello(void){
-return;
-}
-
 void main(void){
-hello();
+        int a;
+		int c;
+		a = 0;
+		c = 0;
+		switch(a){
+			case 1:
+				c = a;
+				break;
+			case 2:
+				c = a - 2;
+			case 3:
+				c = c + 1;
+				break;
+			default:
+				c = 9;
+		}
+		return;
 }
